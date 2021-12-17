@@ -3,7 +3,10 @@
 package v1
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CourierClient interface {
+	ConsumeShipOrder(ctx context.Context, opts ...grpc.CallOption) (Courier_ConsumeShipOrderClient, error)
 }
 
 type courierClient struct {
@@ -25,10 +29,42 @@ func NewCourierClient(cc grpc.ClientConnInterface) CourierClient {
 	return &courierClient{cc}
 }
 
+func (c *courierClient) ConsumeShipOrder(ctx context.Context, opts ...grpc.CallOption) (Courier_ConsumeShipOrderClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Courier_ServiceDesc.Streams[0], "/courier.job.v1.Courier/ConsumeShipOrder", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &courierConsumeShipOrderClient{stream}
+	return x, nil
+}
+
+type Courier_ConsumeShipOrderClient interface {
+	Send(*ShipOrderReq) error
+	Recv() (*ShipOrderMsgReply, error)
+	grpc.ClientStream
+}
+
+type courierConsumeShipOrderClient struct {
+	grpc.ClientStream
+}
+
+func (x *courierConsumeShipOrderClient) Send(m *ShipOrderReq) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *courierConsumeShipOrderClient) Recv() (*ShipOrderMsgReply, error) {
+	m := new(ShipOrderMsgReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CourierServer is the server API for Courier service.
 // All implementations must embed UnimplementedCourierServer
 // for forward compatibility
 type CourierServer interface {
+	ConsumeShipOrder(Courier_ConsumeShipOrderServer) error
 	mustEmbedUnimplementedCourierServer()
 }
 
@@ -36,6 +72,9 @@ type CourierServer interface {
 type UnimplementedCourierServer struct {
 }
 
+func (UnimplementedCourierServer) ConsumeShipOrder(Courier_ConsumeShipOrderServer) error {
+	return status.Errorf(codes.Unimplemented, "method ConsumeShipOrder not implemented")
+}
 func (UnimplementedCourierServer) mustEmbedUnimplementedCourierServer() {}
 
 // UnsafeCourierServer may be embedded to opt out of forward compatibility for this service.
@@ -49,6 +88,32 @@ func RegisterCourierServer(s grpc.ServiceRegistrar, srv CourierServer) {
 	s.RegisterService(&Courier_ServiceDesc, srv)
 }
 
+func _Courier_ConsumeShipOrder_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CourierServer).ConsumeShipOrder(&courierConsumeShipOrderServer{stream})
+}
+
+type Courier_ConsumeShipOrderServer interface {
+	Send(*ShipOrderMsgReply) error
+	Recv() (*ShipOrderReq, error)
+	grpc.ServerStream
+}
+
+type courierConsumeShipOrderServer struct {
+	grpc.ServerStream
+}
+
+func (x *courierConsumeShipOrderServer) Send(m *ShipOrderMsgReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *courierConsumeShipOrderServer) Recv() (*ShipOrderReq, error) {
+	m := new(ShipOrderReq)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Courier_ServiceDesc is the grpc.ServiceDesc for Courier service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -56,6 +121,13 @@ var Courier_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "courier.job.v1.Courier",
 	HandlerType: (*CourierServer)(nil),
 	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "v1/courier.proto",
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ConsumeShipOrder",
+			Handler:       _Courier_ConsumeShipOrder_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "v1/courier.proto",
 }

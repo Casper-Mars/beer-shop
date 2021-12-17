@@ -8,4 +8,16 @@ option go_package = "api/courier/job/v1;v1";
 
 
 service Courier {
+
+    rpc ConsumeShipOrder(stream ShipOrderReq) returns (stream ShipOrderMsgReply);
+
 }
+
+
+message ShipOrderReq {
+    int64  id = 1;
+}
+
+message ShipOrderMsgReply {
+}
+
